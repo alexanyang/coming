@@ -7,10 +7,16 @@ package task
 type Task struct {
 }
 
-type Runner func(...interface{}) (...interface{})
+//虽然兼容返回参数,但是并不执行对返回参数的获取,实现通信后,对回执参数进行处理目前准备采取[]byte进行处理返回,由用户自己进行反序列化
+//r是返回结果的序列化数据,提供给实现方用以完成数据返回,如果未能获取任何数据返回空的[]byte对象,如果在获取结果的过程中失败了,将错误
+type Runner func(...interface{}) (r []byte,err error)
 
 //定义可执行的方法
 type Executable interface {
 	Start() (n int, err error)
+	Stop() (err error)
+}
+//实现改接口,以调用Stop()进行停止当前携程,本质是在执行过程中,通过通道传递信号,使得协程停止
+type Stopable interface {
 	Stop() (err error)
 }
