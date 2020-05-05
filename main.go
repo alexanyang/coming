@@ -1,9 +1,8 @@
 package main
 
 import (
-	"example/task"
+	"coming/task"
 	"fmt"
-	"time"
 )
 
 //func main() {
@@ -47,7 +46,7 @@ func main() {
 	for newTask.IsFinished() {
 		fmt.Printf("task result %s \n", newTask.GetResult())
 		fmt.Println("task finished")
-		time.Sleep(2 * time.Second)
+		//time.Sleep(2 * time.Second)
 		break
 	}
 }
