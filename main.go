@@ -1,52 +1,65 @@
 package main
 
 import (
+	"example/task"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
 	"time"
 )
 
-func main() {
-	start := time.Now()
-	ch := make(chan string, 1)
-	for _, url := range os.Args[1:] {
-		go fetch(url, ch) // start a goroutine
-	}
-	for range os.Args[1:] {
-		fmt.Println(<-ch) // receive from channel ch
-	}
-	fmt.Printf("%.2fs elapsed\n", time.Since(start).Seconds())
-}
-func fetch(url string, ch chan<- string) {
-	start := time.Now()
-	resp, err := http.Get(url)
-	if err != nil {
-		ch <- fmt.Sprint(err) // send to channel ch
-		return
-	}
-	nbytes, err := io.Copy(ioutil.Discard, resp.Body)
-	resp.Body.Close() // don't leak resources
-	if err != nil {
-		ch <- fmt.Sprintf("while reading %s: %v", url, err)
-		return
-	}
-	secs := time.Since(start).Seconds()
-	ch <- fmt.Sprintf("%.2fs %7d %s", secs, nbytes, url)
-}
-
-//
 //func main() {
 //
-//	newTask := task.NewTask(Sum, 1, 2)
-//	newTask.Start()
-//	for newTask.IsFinished(){
-//		fmt.Println(newTask.GetResult())
+//	start := time.Now()
+//	//ss
+//
+//	ch := make(chan string, 1)
+//	for _, url := range os.Args[1:] {
+//		go fetch(url, ch) // start a goroutine
 //	}
-//	fmt.Print("1234")
+//	for range os.Args[1:] {
+//		fmt.Println(<-ch) // receive from channel ch
+//	}
+//	fmt.Printf("%.2fs elapsed\n", time.Since(start).Seconds())
 //}
+//func fetch(url string, ch chan<- string) {
+//	start := time.Now()
+//	resp, err := http.Get(url)
+//	if err != nil {
+//		ch <- fmt.Sprint(err) // send to channel ch
+//		return
+//	}
+//	nbytes, err := io.Copy(ioutil.Discard, resp.Body)
+//	resp.Body.Close() // don't leak resources
+//	if err != nil {
+//		ch <- fmt.Sprintf("while reading %s: %v", url, err)
+//		return
+//	}
+//	secs := time.Since(start).Seconds()
+//	ch <- fmt.Sprintf("%.2fs %7d %s", secs, nbytes, url)
+//}
+
+func main() {
+	newTask := task.NewTask(TaskTest{})
+	err := newTask.Start()
+	fmt.Println("开启任务")
+	if err != nil {
+		fmt.Println("开启任务失败")
+	}
+	for newTask.IsFinished() {
+		fmt.Printf("task result %s \n", newTask.GetResult())
+		fmt.Println("task finished")
+		time.Sleep(2 * time.Second)
+		break
+	}
+}
+
+type TaskTest struct {
+	s string
+}
+
+func (tt TaskTest) Run() ([]byte, error) {
+	return []byte("hello task"), nil
+}
+
 //
 //func Sum(opts ...interface{}) (r []byte,err error){
 //	param := opts[0].([]interface{})
