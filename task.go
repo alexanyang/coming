@@ -1,9 +1,9 @@
-package task
+package main
 
 import (
 	"errors"
 	"fmt"
-	"sync"
+	"log"
 )
 
 //任务主体，需要抽象属性合实现方法
@@ -12,7 +12,6 @@ import (
 // 可执行的代码不能直接执行需要与开始和结束嵌套以获取执行状态,当执行完成后通过通道表示数据结束
 // 需要通过*chan 保存一个通道，必须只想地址，方便在调用的时候能，通道功效，需要用到通道的方法也必须使用*struct{}来去对象本身的引用
 
-//   todo 需要注意通道在缓存不足的情况下会进入阻塞状态  目前还不能用
 //定义可执行的方法
 
 type TaskInterface interface {
@@ -27,11 +26,11 @@ type Task struct {
 	stop   chan int
 	start  chan int
 	pause  chan int
+	wait   chan int
 	works  []TaskItem
 	status bool
 	finish bool
 	data   map[int]interface{}
-	wg     sync.WaitGroup
 }
 
 //func(this *Task,index int){
@@ -45,7 +44,8 @@ func (Task) New() *Task {
 	return &Task{
 		stop:   make(chan int),
 		start:  make(chan int),
-		pause:  make(chan int, 1),
+		pause:  make(chan int),
+		wait:   make(chan int),
 		works:  make([]TaskItem, 0),
 		status: false,
 		finish: false,
@@ -54,11 +54,15 @@ func (Task) New() *Task {
 }
 
 //
-func (this *Task) Add(t TaskItem) {
+func (this *Task) Add(t TaskItem) *Task {
 	if this.works == nil {
 		panic("please use Task.New() create Task")
 	}
+	if this.status {
+		panic("This Task had start ,can not add")
+	}
 	this.works = append(this.works, t)
+	return this
 }
 
 //this function will start a waiting for run TaskItem of slice
@@ -66,25 +70,36 @@ func (this *Task) Start() error {
 	this.status = true
 	go func() {
 		<-this.start
-		for index, work := range this.works {
+		for index, _ := range this.works {
 			select {
 			case <-this.stop:
 				//关闭其他通道
 				close(this.start)
 				close(this.pause)
 				close(this.stop)
-				this.finish = true
-				return
+				log.Print(&this, " has stop")
+				goto END
+			case <-this.pause:
+				this.pause <- 2
 			default:
-				this.pause <- index
-				work(this, index)
-				<-this.pause
-				return
 			}
+			this.Exec(index)
 		}
+	END:
 		this.finish = true
+		this.wait <- 1
 	}()
 	return nil
+}
+
+func (this *Task) Exec(index int) {
+	fmt.Println("预备开始", index)
+	this.works[index](this, index)
+	fmt.Println("执行完成", index)
+}
+
+func (this *Task) WaitFinish() int {
+	return <-this.wait
 }
 
 //当需要再次执行Start时可以重新刷新
@@ -95,7 +110,7 @@ func (this *Task) flush() bool {
 		close(this.pause)
 		this.start = make(chan int)
 		this.stop = make(chan int)
-		this.pause = make(chan int, 1)
+		this.pause = make(chan int)
 		this.status = false
 		this.finish = false
 		return true
@@ -135,6 +150,6 @@ func (this *Task) Resume() {
 }
 
 //this need user put result of TaskItem into data ,and key is index ,value is result
-func (this *Task) Call() (interface{}, error) {
+func (this *Task) Call() (map[int]interface{}, error) {
 	return this.data, nil
 }
