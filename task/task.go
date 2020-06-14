@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 )
@@ -21,76 +22,119 @@ type TaskInterface interface {
 	New() interface{}
 }
 
+//适合执行顺序长时间任务
 type Task struct {
 	stop   chan int
 	start  chan int
+	pause  chan int
 	works  []TaskItem
 	status bool
 	finish bool
-	data   interface{}
+	data   map[int]interface{}
 	wg     sync.WaitGroup
 }
 
-type TaskItem func(Task, ...interface{}) error
+//func(this *Task,index int){
+//    //do something
+//    //if there is result you need ,you can put it into this.data[index]
+//    this.data[index] = result
+//}
+type TaskItem func(*Task, int) error
 
 func (Task) New() *Task {
 	return &Task{
 		stop:   make(chan int),
 		start:  make(chan int),
-		works:  make([]Task, 0),
+		pause:  make(chan int, 1),
+		works:  make([]TaskItem, 0),
 		status: false,
 		finish: false,
-		data:   nil,
+		data:   make(map[int]interface{}),
 	}
 }
 
+//
 func (this *Task) Add(t TaskItem) {
 	if this.works == nil {
 		panic("please use Task.New() create Task")
 	}
 	this.works = append(this.works, t)
 }
+
+//this function will start a waiting for run TaskItem of slice
 func (this *Task) Start() error {
+	this.status = true
 	go func() {
-		for {
+		<-this.start
+		for index, work := range this.works {
 			select {
 			case <-this.stop:
 				//关闭其他通道
+				close(this.start)
+				close(this.pause)
+				close(this.stop)
+				this.finish = true
 				return
 			default:
-				this.work(*this)
+				this.pause <- index
+				work(this, index)
+				<-this.pause
 				return
 			}
 		}
+		this.finish = true
 	}()
+	return nil
+}
+
+//当需要再次执行Start时可以重新刷新
+func (this *Task) flush() bool {
+	if this.finish {
+		close(this.start)
+		close(this.stop)
+		close(this.pause)
+		this.start = make(chan int)
+		this.stop = make(chan int)
+		this.pause = make(chan int, 1)
+		this.status = false
+		this.finish = false
+		return true
+	}
+	return false
 }
 
 func (this *Task) Stop() error {
 	var err error
-
 	defer func() {
 		if err1 := recover(); err != nil {
-			err = fmt.Sprint(err1)
+			err = fmt.Errorf("%v", err1)
 		}
 	}()
-
 	this.stop <- 1
-
 	return err
 }
 
 func (this *Task) Run() error {
-	return this.work(*this)
+	var err error
+	if !this.status {
+		err = errors.New("please do Start() function before Run()")
+		return err
+	}
+	this.start <- 1
+	return err
 }
 
+// 如果多处触发Pause()可能会导致阻塞，建议 go this.Pause()
 func (this *Task) Pause() {
-
+	this.pause <- 1
 }
 
+// 如果多处触发Resume()可能会导致阻塞，建议 go this.Pause()
 func (this *Task) Resume() {
-
+	<-this.pause
 }
 
+//this need user put result of TaskItem into data ,and key is index ,value is result
 func (this *Task) Call() (interface{}, error) {
-
+	return this.data, nil
 }

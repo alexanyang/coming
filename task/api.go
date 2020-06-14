@@ -22,7 +22,7 @@ type Startable interface {
 	Start() error
 }
 
-type Pauable interface {
+type Pausable interface {
 	Pause()
 	Resume()
 }
