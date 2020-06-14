@@ -93,9 +93,7 @@ func (this *Task) Start() error {
 }
 
 func (this *Task) Exec(index int) {
-	fmt.Println("预备开始", index)
 	this.works[index](this, index)
-	fmt.Println("执行完成", index)
 }
 
 func (this *Task) WaitFinish() int {
