@@ -1,10 +1,7 @@
 package coming
 
-/**
- * @author anyang
- * Email: 1300378587@qq.com
- * Created Date:2020-06-11 09:20
- */
+//some struct can start and stop ,that means Executable
+//继承了Stopable 和 Startable
 type Executable interface {
 	Start() error
 	Stop() error
@@ -22,6 +19,7 @@ type Startable interface {
 	Start() error
 }
 
+//Pause to stop next task , resume to allow run
 type Pausable interface {
 	Pause()
 	Resume()
@@ -38,6 +36,7 @@ type Callable interface {
 }
 
 //访问Stop()接口失败,没有成功关闭
+//
 type StopRefuseError struct{}
 
 func (StopRefuseError) Error() string {

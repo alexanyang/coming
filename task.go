@@ -6,30 +6,25 @@ import (
 	"log"
 )
 
-//任务主体，需要抽象属性合实现方法
-//任务主题需要存在一个私有字段int 用以表示数据的执行状态,需要保证这个字段的原子性
-// 需要一个就收chan int  用以接收数据的状态变化,在数据结束后返回一个int值进行表示
-// 可执行的代码不能直接执行需要与开始和结束嵌套以获取执行状态,当执行完成后通过通道表示数据结束
-// 需要通过*chan 保存一个通道，必须只想地址，方便在调用的时候能，通道功效，需要用到通道的方法也必须使用*struct{}来去对象本身的引用
-
 //定义可执行的方法
 
 type TaskInterface interface {
-	Start() error
 	Run() error
 	Stop() error
-	New() interface{}
+	Start() error
+	Pause()
+	Resume()
 }
 
 //适合执行顺序长时间任务
 type Task struct {
+	status bool
+	finish bool
 	stop   chan int
 	start  chan int
 	pause  chan int
 	wait   chan int
 	works  []TaskItem
-	status bool
-	finish bool
 	data   map[int]interface{}
 }
 
@@ -42,13 +37,13 @@ type TaskItem func(*Task, int) error
 
 func (Task) New() *Task {
 	return &Task{
+		status: false,
+		finish: false,
 		stop:   make(chan int),
 		start:  make(chan int),
 		pause:  make(chan int),
 		wait:   make(chan int),
 		works:  make([]TaskItem, 0),
-		status: false,
-		finish: false,
 		data:   make(map[int]interface{}),
 	}
 }
