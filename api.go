@@ -1,5 +1,7 @@
 package coming
 
+import "errors"
+
 //访问Stop()接口失败,没有成功关闭
 //
 type StopRefuseError struct{}
@@ -26,18 +28,28 @@ type TaskInterface interface {
 type BaseTask struct{}
 
 //正常启动目标返回nil,否则返回错误信息,程序执行期间阻塞
-func (this BaseTask) Run() error {}
+func (this BaseTask) Run() error {
+	return errors.New("you need override Run() method")
+}
 
 //实现改接口,以调用Stop()进行停止当前携程,本质是在执行过程中,通过通道传递信号,使得协程停止
 //执行stop方法,当程序正常停止时返回nil,当程序停止被拒绝,返回StopRefuseError,当程序停止
 //成功,但是报错时,将返回对应的错误信息
-func (this BaseTask) Stop() error {}
+func (this BaseTask) Stop() error {
+	return errors.New("you need override Stop() method")
+}
 
 //如果完成了Start()操作则返回nil,否则返回err信息
-func (this BaseTask) Start() error {}
+func (this BaseTask) Start() error {
+	return errors.New("you need override Start() method")
+}
 
 //Pause to stop next task , resume to allow run
-func (this BaseTask) Pause() {}
+func (this BaseTask) Pause() {
+	panic("you need override Pause() and Resume() method to use this function")
+}
 
 //Pause to stop next task , resume to allow run
-func (this BaseTask) Resume() {}
+func (this BaseTask) Resume() {
+	panic("you need override Pause() and Resume() method to use this function")
+}
