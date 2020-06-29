@@ -8,16 +8,9 @@ import (
 
 //定义可执行的方法
 
-type TaskInterface interface {
-	Run() error
-	Stop() error
-	Start() error
-	Pause()
-	Resume()
-}
-
 //适合执行顺序长时间任务
 type Task struct {
+	BaseTask
 	status bool
 	finish bool
 	stop   chan int
@@ -39,8 +32,8 @@ func (Task) New() *Task {
 	return &Task{
 		status: false,
 		finish: false,
-		stop:   make(chan int),
-		start:  make(chan int),
+		stop:   make(chan int, 1),
+		start:  make(chan int, 1),
 		pause:  make(chan int),
 		wait:   make(chan int),
 		works:  make([]TaskItem, 0),
@@ -83,6 +76,7 @@ func (this *Task) Start() error {
 	END:
 		this.finish = true
 		this.wait <- 1
+		this.status = false
 	}()
 	return nil
 }
@@ -92,18 +86,18 @@ func (this *Task) Exec(index int) {
 }
 
 func (this *Task) WaitFinish() int {
-	return <-this.wait
+	result := <-this.wait
+	close(this.wait)
+	return result
 }
 
-//当需要再次执行Start时可以重新刷新
-func (this *Task) flush() bool {
+//当需要再次执行Start时可以重新刷新,在此之前需要执行stop,并等待关闭完成
+func (this *Task) Flush() bool {
 	if this.finish {
-		close(this.start)
-		close(this.stop)
-		close(this.pause)
-		this.start = make(chan int)
-		this.stop = make(chan int)
+		this.start = make(chan int, 1)
+		this.stop = make(chan int, 1)
 		this.pause = make(chan int)
+		this.wait = make(chan int)
 		this.status = false
 		this.finish = false
 		return true
@@ -132,7 +126,7 @@ func (this *Task) Run() error {
 	return err
 }
 
-// 如果多处触发Pause()可能会导致阻塞，建议 go this.Pause()
+// 如果多处触发Pause()可能会导致阻塞，建议 go this.Pause(),利用channel阻塞进行暂停
 func (this *Task) Pause() {
 	this.pause <- 1
 }
