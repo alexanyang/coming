@@ -67,13 +67,10 @@ func TestTask_task(t *testing.T) {
 ```go 
 func TestNewSchedule(t *testing.T) {
 
-	NewDailySchedule(12, 0, 0, func(t time.Time) {
-		fmt.Printf("现在时间是%s,定时执行中", t)
-	})
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-		})
-	}
+	NewDailySchedule(ANY, ANY, ANY, func(t time.Time) {
+    		fmt.Printf("现在时间是%s,定时执行中\n", t)
+    	})
+    time.Sleep(5 * time.Second)
 }
 
 ```
