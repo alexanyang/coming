@@ -50,3 +50,12 @@ func TestTask_task(t *testing.T) {
 	fmt.Println("main执行完成")
 
 }
+
+func ExampleTask_Add() {
+	task := Task{}.New()
+	task.Add(func(this *Task, i int) error {
+		fmt.Printf("%s 执行第一个任务，Order：%v \n", time.Now(), i)
+		this.data[i] = fmt.Sprintf("完成第一个任务，Order：%v ,you can save result to this.data[i] \n", i)
+		return nil
+	})
+}
