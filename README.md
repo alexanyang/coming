@@ -66,10 +66,11 @@ func TestTask_task(t *testing.T) {
 
 ```go 
 func TestNewSchedule(t *testing.T) {
-
-	NewDailySchedule(ANY, ANY, ANY, func(t time.Time) {
+    //ANY 分别对应时分秒,hour,minute,second
+	NewDailySchedule(ANY, ANY, ANY,"每秒任务", func(t time.Time) {
     		fmt.Printf("现在时间是%s,定时执行中\n", t)
-    	})
+    	})  
+    //延时关闭才能看到协程输出
     time.Sleep(5 * time.Second)
 }
 
