@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-/**
- * @author anyang
- * Email: 1300378587@qq.com
- * Created Date:2020-06-21 11:35
- */
-
 func TestNewSchedule(t *testing.T) {
 
 	NewDailySchedule(ANY, ANY, ANY, "小任务", func(t time.Time) {
