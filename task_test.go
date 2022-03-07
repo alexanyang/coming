@@ -7,20 +7,20 @@ import (
 )
 
 func TestTask_task(t *testing.T) {
-	task := Task{}.New()
+	task := NewTask()
 	task.Add(func(this *Task, i int) error {
 		fmt.Printf("%s 执行第一个任务，序号：%v \n", time.Now(), i)
-		this.data[i] = fmt.Sprintf("完成第一个任务，序号：%v \n", i)
+		this.data[i] = fmt.Sprintf("完成第一个任务，序号：%v", i)
 		time.Sleep(2 * time.Second)
 		return nil
 	}).Add(func(this *Task, i int) error {
 		fmt.Printf("%s 执行第二个任务，序号：%v \n", time.Now(), i)
-		this.data[i] = fmt.Sprintf("完成第二个任务，序号：%v \n", i)
+		this.data[i] = fmt.Sprintf("完成第二个任务，序号：%v", i)
 		time.Sleep(2 * time.Second)
 		return nil
 	}).Add(func(this *Task, i int) error {
 		fmt.Printf("%s 执行第三个任务，序号：%v \n", time.Now(), i)
-		this.data[i] = fmt.Sprintf("完成第三个任务，序号：%v \n", i)
+		this.data[i] = fmt.Sprintf("完成第三个任务，序号：%v", i)
 		time.Sleep(2 * time.Second)
 		return nil
 	})
@@ -34,9 +34,13 @@ func TestTask_task(t *testing.T) {
 	fmt.Println("暂停中")
 
 	time.Sleep(10 * time.Second)
+	fmt.Println("resume")
 	task.Resume()
-	fmt.Println("重启")
-	task.Stop()
+	go task.Pause()
+	time.Sleep(1 * time.Second)
+	task.Resume()
+	//fmt.Println("stop")
+	//task.Stop()
 	//开始等待结束
 	task.WaitFinish()
 	fmt.Printf("%s main执行等待完成 \n", time.Now())
@@ -48,11 +52,10 @@ func TestTask_task(t *testing.T) {
 	}
 	time.Sleep(2 * time.Second)
 	fmt.Println("main执行完成")
-
 }
 
 func ExampleTask_Add() {
-	task := Task{}.New()
+	task := NewTask()
 	task.Add(func(this *Task, i int) error {
 		fmt.Printf("%s 执行第一个任务，Order：%v \n", time.Now(), i)
 		this.data[i] = fmt.Sprintf("完成第一个任务，Order：%v ,you can save result to this.data[i] \n", i)
